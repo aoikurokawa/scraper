@@ -1,6 +1,6 @@
 import {Keypair, PublicKey} from "@solana/web3.js";
 import {createMint} from "@solana/spl-token";
-import {beefMintKeypair, stakeMintKeypair, connection, randomPayer, findBeefMintAuthorityPDA} from "./config";
+import {beefMintKeypair, stakeMintKeypair, connection, randomPayer, findStakeMintAuthorityPDA} from "./config";
 
 const createMintAcct = async (keypairToAssign: Keypair, authorityToAssign: PublicKey): Promise<PublicKey> => {
   return await createMint(
@@ -16,7 +16,7 @@ const createMintAcct = async (keypairToAssign: Keypair, authorityToAssign: Publi
 export const createMints = async() => {
   const beefMintAddress = await createMintAcct(beefMintKeypair, beefMintKeypair.publicKey);
   
-  const [stakePDA, _] = await findBeefMintAuthorityPDA();
+  const [stakePDA, _] = await findStakeMintAuthorityPDA();
   
   const stakeMintAddress = await createMintAcct(stakeMintKeypair, stakePDA);
   

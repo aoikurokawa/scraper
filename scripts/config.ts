@@ -1,9 +1,10 @@
 import {LAMPORTS_PER_SOL, PublicKey, Keypair} from "@solana/web3.js";
 import fs from "fs";
 import * as anchor from "@project-serum/anchor";
+import {Staking} from "../target/types/staking";
 
 anchor.setProvider(anchor.AnchorProvider.env());
-export const program = anchor.workspace.Staking;
+export const program = anchor.workspace.Staking as anchor.Program<Staking>;
 export const connection = anchor.getProvider().connection;
 export const useWallet = anchor.workspace.Staking.provider.wallet;
 

@@ -1,16 +1,26 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
-import { Staking } from "../target/types/staking";
+import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {program, stakeMintAddress, findStakeMintAuthorityPDA} from "../scripts/config";
+import {createMints} from "../scripts/create_mints";
 
 describe("staking", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  
+  before(async () => {
+    await createMints();
+  })
 
-  const program = anchor.workspace.Staking as Program<Staking>;
+  it("Stake $beef for $stake", async () => {
+    const [stakePDA, stakePDABump] = await findStakeMintAuthorityPDA();
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+    await program.methods
+      .stake(stakePDABump, new anchor.BN(5_000))
+      .accounts(
+        {
+          tokenProgram: TOKEN_PROGRAM_ID, 
+          stakeMint: stakeMintAddress,
+          stakeMintAuthority: stakePDA,
+        }
+      )
+      .rpc();
   });
 });
