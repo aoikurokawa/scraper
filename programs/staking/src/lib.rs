@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token};
+use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
 declare_id!("BusWxEkAkWkBm9Dpfv2eLoFNTuRzpKKWaC2QQAg7bRUW");
 pub const STAKE_MINT_ADDRESS: &str = "J4Lnzdm6yioomASsTUbFMZh1SpRe9QSBTx8J4Gs8yWzw";
@@ -8,20 +8,19 @@ pub const STAKE_MINT_ADDRESS: &str = "J4Lnzdm6yioomASsTUbFMZh1SpRe9QSBTx8J4Gs8yW
 pub mod staking {
     use super::*;
 
-
-    pub fn stake(ctx: Context<Stake>, stake_mint_authority_bump: u8,amount: u64) -> Result<()> {
+    pub fn stake(ctx: Context<Stake>, stake_mint_authority_bump: u8, amount: u64) -> Result<()> {
         let stake_amount = amount;
-        
+
         let stake_mint_address = ctx.accounts.stake_mint.key();
         let seeds = &[stake_mint_address.as_ref(), &[stake_mint_authority_bump]];
         let signer = [&seeds[..]];
 
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
-            token::MinTo {
+            token::MintTo {
                 mint: ctx.accounts.stake_mint.to_account_info(),
                 authority: ctx.accounts.stake_mint_authority.to_account_info(),
-                to: ,
+                to: ctx.accounts.user_stake_token_bag.to_account_info(),
             },
             &signer,
         );
@@ -46,4 +45,6 @@ pub struct Stake<'info> {
         bump = stake_mint_authority_bump
     )]
     pub stake_mint_authority: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub user_stake_token_bag: Account<'info, TokenAccount>,
 }
