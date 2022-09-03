@@ -9,18 +9,18 @@ pub mod staking {
 
     pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         let stake_amount = amount;
-        
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            token::MinTo {
-                mint: ctx.accounts.stake_mint.to_account_info(),
-                authority: ,
-                to: ,
-            },
-            &signer,
-        );
-        token::mint_to(cpi_ctx, stake_amount);
-        
+
+        // let cpi_ctx = CpiContext::new_with_signer(
+        //     ctx.accounts.token_program.to_account_info(),
+        //     token::MinTo {
+        //         mint: ctx.accounts.stake_mint.to_account_info(),
+        //         authority: ,
+        //         to: ,
+        //     },
+        //     &signer,
+        // );
+        // token::mint_to(cpi_ctx, stake_amount);
+
         Ok(())
     }
 }
