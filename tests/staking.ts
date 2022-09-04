@@ -75,6 +75,35 @@ describe("staking", () => {
     const tokenHelper = new TokenHelper(beefMintAddress);
     expect(await tokenHelper.balance(beefBagPDA)).to.be.equal(5_000);
   });
+
+  it("It redeems stake token for beef token", async () => {
+    // 0. Prepare Token Bags
+    const user = new User();
+    await user.getOrCreateBeefTokenBag();
+    await user.getOrCreateStakeTokenBag();
+    const userStakes = await user.stakeBalance();
+    const userBeefs = await user.beefBalance();
+
+    const [beefBagPDA, beefBagBump] = await getProgramBeefTokenBagPDA();
+
+    await program.methods
+      .unstake(beefBagBump, new anchor.BN(5_000))
+      .accounts({
+        tokenProgram: TOKEN_PROGRAM_ID,
+
+        stakeMint: stakeMintAddress,
+        userStakeTokenBag: user.stakeTokenBag,
+        userStakeTokenBagAuthority: user.wallet.publicKey,
+
+        beefMint: beefMintAddress,
+        programBeefTokenBag: beefBagPDA,
+        userBeefTokenBag: user.beefTokenBag,
+      })
+      .rpc();
+
+    expect(await user.stakeBalance()).to.be.equal(userStakes - 5_000);
+    expect(await user.beefBalance()).to.be.equal(userBeefs + 5_000);
+  });
 });
 
 export const getProgramBeefTokenBagPDA = async (): Promise<
