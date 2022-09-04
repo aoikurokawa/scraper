@@ -25,14 +25,17 @@ describe("staking", () => {
 
     console.log("Beef PDA: ", beefPDA);
 
-    await program.methods.createBeefTokenBag().accounts({
-      beefMint: beefMintAddress,
-      programBeefTokenBag: beefPDA,
-      payer: user.wallet.publicKey,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
-    });
+    await program.methods
+      .createBeefTokenBag()
+      .accounts({
+        beefMint: beefMintAddress,
+        programBeefTokenBag: beefPDA,
+        payer: user.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .rpc();
 
     const tokenHelper = new TokenHelper(beefMintAddress);
     expect(await tokenHelper.balance(beefPDA)).to.be.eql(0);
