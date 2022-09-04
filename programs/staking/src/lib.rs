@@ -48,7 +48,7 @@ pub struct CreateBeefTokenBag<'info> {
     )]
     pub program_beef_token_bag: Account<'info, TokenAccount>,
     #[account(
-        address = STAKE_MINT_ADDRESS.parse::<Pubkey>().unwrap()
+        address = BEEF_MINT_ADDRESS.parse::<Pubkey>().unwrap()
     )]
     pub beef_mint: Account<'info, Mint>,
     #[account(mut)]
