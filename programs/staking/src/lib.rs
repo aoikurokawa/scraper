@@ -2,11 +2,17 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
 declare_id!("BusWxEkAkWkBm9Dpfv2eLoFNTuRzpKKWaC2QQAg7bRUW");
-pub const STAKE_MINT_ADDRESS: &str = "J4Lnzdm6yioomASsTUbFMZh1SpRe9QSBTx8J4Gs8yWzw";
 
 #[program]
 pub mod staking {
+    pub const STAKE_MINT_ADDRESS: &str = "J4Lnzdm6yioomASsTUbFMZh1SpRe9QSBTx8J4Gs8yWzw";
+    pub const BEEF_MINT_ADDRESS: &str = "88vGScBgunKkmKcXyg65kiJ8XnZ9VvXs3xYwSnB4Nwia";
+
     use super::*;
+
+    pub fn create_beef_token_bag(_ctx: Context<CreateBeefTokenBag>) -> Result<()> {
+        Ok(())
+    }
 
     pub fn stake(ctx: Context<Stake>, stake_mint_authority_bump: u8, amount: u64) -> Result<()> {
         let stake_amount = amount;
@@ -28,6 +34,28 @@ pub mod staking {
 
         Ok(())
     }
+}
+
+#[derive(Accounts)]
+pub struct CreateBeefTokenBag<'info> {
+    #[account(
+        init,
+        payer = payer,
+        seeds = [BEEF_MINT_ADDRESS.parse::<Pubkey>().unwrap().as_ref()],
+        bump,
+        token::mint = beef_mint,
+        token::authority = program_beef_token_bag,
+    )]
+    pub program_beef_token_bag: Account<'info, TokenAccount>,
+    #[account(
+        address = STAKE_MINT_ADDRESS.parse::<Pubkey>().unwrap()
+    )]
+    pub beef_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]

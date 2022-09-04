@@ -6,7 +6,7 @@ import { Staking } from "../target/types/staking";
 anchor.setProvider(anchor.AnchorProvider.env());
 export const program = anchor.workspace.Staking as anchor.Program<Staking>;
 export const connection = anchor.getProvider().connection;
-export const useWallet = anchor.workspace.Staking.provider.wallet;
+export const userWallet = anchor.workspace.Staking.provider.wallet;
 
 export const randomPayer = async (lamports = LAMPORTS_PER_SOL) => {
   const wallet = Keypair.generate();
