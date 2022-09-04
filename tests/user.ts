@@ -37,6 +37,6 @@ export class User {
   };
 
   stakeBalance = async () => {
-    return await this.stakeToken.balance(this.stakeTokenBag);
+    return await this.beefToken.balance(this.stakeTokenBag);
   };
 }

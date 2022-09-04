@@ -41,9 +41,15 @@ pub struct CreateBeefTokenBag<'info> {
     #[account(
         init,
         payer = payer,
+
+        // We use the token mint as as seed fo the mapping -> think "HashMap[seeds+bump] = pda" 
         seeds = [BEEF_MINT_ADDRESS.parse::<Pubkey>().unwrap().as_ref()],
         bump,
+
+        // Token Program want to know that what kind of token this token bag is for
         token::mint = beef_mint,
+
+        // It's a PDA so the authority is itself!
         token::authority = program_beef_token_bag,
     )]
     pub program_beef_token_bag: Account<'info, TokenAccount>,

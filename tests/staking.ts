@@ -1,14 +1,12 @@
 import * as anchor from "@project-serum/anchor";
-import { SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { airdropBeefToken } from "../scripts/airdrop_beef";
 import {
   program,
   stakeMintAddress,
   findStakeMintAuthorityPDA,
-  findBeefMintAuthorityPDA,
   beefMintAddress,
-  getProgramBeefTokenBagPDA,
 } from "../scripts/config";
 import { createMints } from "../scripts/create_mints";
 import { User } from "./user";
@@ -25,6 +23,8 @@ describe("staking", () => {
     const user = new User();
     const [beefPDA, _] = await getProgramBeefTokenBagPDA();
 
+    console.log("Beef PDA: ", beefPDA);
+
     await program.methods.createBeefTokenBag().accounts({
       beefMint: beefMintAddress,
       programBeefTokenBag: beefPDA,
@@ -37,8 +37,6 @@ describe("staking", () => {
     const tokenHelper = new TokenHelper(beefMintAddress);
     expect(await tokenHelper.balance(beefPDA)).to.be.eql(0);
   });
-
-
 
   it("Stake $beef for $stake", async () => {
     // 0. stakeMintAuthority = PDA with stakeMint as seed
@@ -68,3 +66,14 @@ describe("staking", () => {
       .rpc();
   });
 });
+
+export const getProgramBeefTokenBagPDA = async (): Promise<
+  [PublicKey, number]
+> => {
+  const seed = beefMintAddress;
+
+  return await PublicKey.findProgramAddress(
+    [seed.toBuffer()],
+    program.programId
+  );
+};
