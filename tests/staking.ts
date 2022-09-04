@@ -40,22 +40,26 @@ describe("staking", () => {
   });
 
   it("Stake $beef for $stake", async () => {
-    // 0. stakeMintAuthority = PDA with stakeMint as seed
-    const [stakePDA, stakePDABump] = await findStakeMintAuthorityPDA();
-
-    // 1. Prepare Token Bags
+    // 0. Prepare Token Bags
     const user = new User();
+    await user.getOrCreateBeefTokenBag();
     await user.getOrCreateStakeTokenBag();
-
-    // 2. Get current stake amount
     const userStakes = await user.stakeBalance();
+    const userBeefs = await user.beefBalance();
 
-    // 3. STAKE
+    const [stakePDA, stakePDABump] = await findStakeMintAuthorityPDA();
+    const [beefBagPDA, beefBagBump] = await getProgramBeefTokenBagPDA();
+
+    // 2. Execute our stuff
     await program.methods
-      .stake(stakePDABump, new anchor.BN(5_000))
+      .stake(stakePDABump, beefBagBump, new anchor.BN(5_000))
       .accounts({
         // Solana is lost: where are my spl program friends?
         tokenProgram: TOKEN_PROGRAM_ID,
+        userBeefTokenBag: user.beefTokenBag,
+        userBeefTokenBagAuthority: user.wallet.publicKey,
+        programBeefTokenBag: beefBagPDA,
+        beefMint: beefMintAddress,
         // Token Program asks: what type of token am I supposed to print?
         stakeMint: stakeMintAddress,
         // Token Program asks:
@@ -65,6 +69,11 @@ describe("staking", () => {
         userStakeTokenBag: user.stakeTokenBag,
       })
       .rpc();
+
+    expect(await user.stakeBalance()).to.be.equal(userStakes + 5_000);
+    expect(await user.beefBalance()).to.be.equal(userBeefs - 5_000);
+    const tokenHelper = new TokenHelper(beefMintAddress);
+    expect(await tokenHelper.balance(beefBagPDA)).to.be.equal(5_000);
   });
 });
 

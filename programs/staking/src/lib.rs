@@ -14,7 +14,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn stake(ctx: Context<Stake>, stake_mint_authority_bump: u8, amount: u64) -> Result<()> {
+    pub fn stake(ctx: Context<Stake>, stake_mint_authority_bump: u8, program_beef_bag_bump: u8, amount: u64) -> Result<()> {
         let stake_amount = amount;
 
         let stake_mint_address = ctx.accounts.stake_mint.key();
@@ -31,6 +31,16 @@ pub mod staking {
             &signer,
         );
         token::mint_to(cpi_ctx, stake_amount)?;
+
+        let cpi_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            token::Transfer {
+                from: ctx.accounts.user_beef_token_bag.to_account_info(),
+                to: ctx.accounts.program_beef_token_bag.to_account_info(),
+                authority: ctx.accounts.user_beef_token_bag_authority.to_account_info(),
+            },
+        );
+        token::transfer(cpi_ctx, stake_amount)?;
 
         Ok(())
     }
@@ -65,9 +75,22 @@ pub struct CreateBeefTokenBag<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(stake_mint_authority_bump: u8)]
+#[instruction(stake_mint_authority_bump: u8, program_beef_bag_bump: u8 )]
 pub struct Stake<'info> {
     pub token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub user_beef_token_bag: Account<'info, TokenAccount>,
+    pub user_beef_token_bag_authority: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [beef_mint.key().as_ref()],
+        bump = program_beef_bag_bump,
+    )]
+    pub program_beef_token_bag: Account<'info, TokenAccount>,
+    #[account(
+        address = BEEF_MINT_ADDRESS.parse::<Pubkey>().unwrap()
+    )]
+    pub beef_mint: Account<'info, Mint>,
     #[account(
         mut,
         address = STAKE_MINT_ADDRESS.parse::<Pubkey>().unwrap()
