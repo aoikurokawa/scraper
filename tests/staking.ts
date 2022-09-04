@@ -8,6 +8,7 @@ import {
   findStakeMintAuthorityPDA,
   findBeefMintAuthorityPDA,
   beefMintAddress,
+  getProgramBeefTokenBagPDA,
 } from "../scripts/config";
 import { createMints } from "../scripts/create_mints";
 import { User } from "./user";
@@ -22,7 +23,7 @@ describe("staking", () => {
 
   it("It creates the program beef token bag", async () => {
     const user = new User();
-    const [beefPDA, _] = await findBeefMintAuthorityPDA();
+    const [beefPDA, _] = await getProgramBeefTokenBagPDA();
 
     await program.methods.createBeefTokenBag().accounts({
       beefMint: beefMintAddress,
@@ -36,6 +37,8 @@ describe("staking", () => {
     const tokenHelper = new TokenHelper(beefMintAddress);
     expect(await tokenHelper.balance(beefPDA)).to.be.eql(0);
   });
+
+
 
   it("Stake $beef for $stake", async () => {
     // 0. stakeMintAuthority = PDA with stakeMint as seed

@@ -36,6 +36,17 @@ export const getProgramDerivedAddress = async (
   );
 };
 
+export const getProgramBeefTokenBagPDA = async (): Promise<
+  [PublicKey, number]
+> => {
+  const seed = beefMintAddress;
+
+  return await PublicKey.findProgramAddress(
+    [seed.toBuffer()],
+    program.programId
+  );
+};
+
 // @ts-ignore
 const beefData = JSON.parse(fs.readFileSync(".keys/beef_mint.json"));
 export const beefMintKeypair = Keypair.fromSecretKey(new Uint8Array(beefData));
