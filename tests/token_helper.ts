@@ -19,9 +19,7 @@ export class TokenHelper {
     } 
     
     balance = async (tokenBag: PublicKey) => {
-        console.log("Token bag", tokenBag);
         const balance = (await connection.getTokenAccountBalance(tokenBag)).value.amount;
-        console.log("Balance", balance);
         return parseInt(balance);
     }
     

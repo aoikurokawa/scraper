@@ -23,8 +23,6 @@ describe("staking", () => {
     const user = new User();
     const [beefPDA, _] = await getProgramBeefTokenBagPDA();
 
-    console.log("Beef PDA: ", beefPDA);
-
     await program.methods
       .createBeefTokenBag()
       .accounts({
