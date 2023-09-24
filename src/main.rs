@@ -6,22 +6,69 @@ use std::{
 
 use dotenv::dotenv;
 use scraper::{Html, Selector};
-use serde_json::{json, Map, Value};
+use serde_json::Value;
+use teloxide::{prelude::*, utils::command::BotCommands};
 
-fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() {
     dotenv().expect("can not find env file");
+    pretty_env_logger::init();
+    log::info!("Starting command bot..");
 
-    // read env variables
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("failed to read TELEGRAM_BOT_TOKEN");
-    let chat_id: i64 = env::var("TELEGRAM_CHAT_ID")
-        .expect("failed to read TELEGRAM_CHAT_ID")
-        .parse()
-        .expect("failed to parse");
+    let bot = Bot::from_env();
+
+    Command::repl(bot, answer).await;
+}
+
+#[derive(BotCommands, Clone)]
+#[command(
+    rename_rule = "lowercase",
+    description = "These commands are supported:"
+)]
+enum Command {
+    #[command(description = "display this text.")]
+    Help,
+    #[command(description = "handle a username.")]
+    Username(String),
+    #[command(description = "handle a username and an age.", parse_with = "split")]
+    UsernameAndAge { username: String, age: u8 },
+    #[command(description = "handle getting new post.")]
+    NewPost,
+}
+
+async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+    match cmd {
+        Command::Help => {
+            bot.send_message(msg.chat.id, Command::descriptions().to_string())
+                .await?
+        }
+        Command::Username(username) => {
+            bot.send_message(msg.chat.id, format!("Your username is @{username}."))
+                .await?
+        }
+        Command::UsernameAndAge { username, age } => {
+            bot.send_message(
+                msg.chat.id,
+                format!("Your username is @{username} and age is {age}."),
+            )
+            .await?
+        }
+        Command::NewPost => {
+            let text = get_latest_post().await?;
+
+            bot.send_message(msg.chat.id, text).await?
+        }
+    };
+
+    Ok(())
+}
+
+async fn get_latest_post() -> reqwest::Result<String> {
     let url = env::var("TARGET_URL").expect("failed to read TARGET_URL");
 
-    let res = reqwest::blocking::get(&url).expect("Could not load url.");
+    let res = reqwest::get(&url).await?;
 
-    let raw_html_string = res.text().unwrap();
+    let raw_html_string = res.text().await?;
 
     let document = Html::parse_document(&raw_html_string);
 
@@ -35,48 +82,35 @@ fn main() -> std::io::Result<()> {
     let title = &parsed["appState"]["loader"]["dataByRouteId"]["2a3f"]["catalogs"][0]["articles"]
         [0]["title"];
 
+    let mut res = String::new();
     match File::open("latest_post_title.txt") {
         Ok(mut file) => {
+            println!("reading file");
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();
 
+            println!("contents is {}, title is {}", contents, title);
             if contents != title.to_string() {
                 let mut file = File::create("latest_post_title.txt").unwrap();
-                file.write_all(title.to_string().as_bytes())?;
+                file.write_all(title.to_string().as_bytes()).expect("");
 
+                println!("send message");
                 // send message by Telegram
-                let msg = format!("New post {} has released. Check out {}", title, url);
-                send_message(msg, &token, chat_id).expect("fail to send message");
+                res = format!("New post {} has released. Check out {}", title, url);
             }
         }
         Err(_) => {
+            println!("creating file");
             let mut file = File::create("latest_post_title.txt").unwrap();
-            file.write_all(title.to_string().as_bytes())?;
+            file.write_all(title.to_string().as_bytes()).expect("");
         }
     }
 
-    Ok(())
-}
+    res = if res.is_empty() {
+        format!("not posted yet")
+    } else {
+        res
+    };
 
-fn send_message(
-    msg: String,
-    token: &str,
-    chat_id: i64,
-) -> Result<reqwest::blocking::Response, reqwest::Error> {
-    let mut request_body = Map::new();
-    request_body.insert("text".to_string(), Value::String(msg));
-    request_body.insert("chat_id".to_string(), json!(chat_id));
-    request_body.insert(
-        "parse_mode".to_string(),
-        Value::String("MarkdownV2".to_string()),
-    );
-
-    let url = format!(
-        "https://api.telegram.org/bot{token}/sendMessage",
-        token = &token
-    );
-    let client = reqwest::blocking::Client::new();
-    let resp = client.post(url).json(&json!(request_body)).send()?;
-
-    Ok(resp)
+    Ok(res)
 }
