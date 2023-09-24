@@ -1,40 +1,41 @@
-use std::fs::File;
+use std::env;
 
-use scraper::{Html, Selector};
+use dotenv::dotenv;
+use serde_json::{json, Map, Value};
 
 fn main() {
-    let url =
-        "https://www.binance.com/en/support/announcement/new-cryptocurrency-listing?c=48&navld=48";
-    let res = reqwest::blocking::get(url).expect("Could not load url.");
+    dotenv().expect("can not find env file");
 
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("failed to read TELEGRAM_BOT_TOKEN");
+    let chat_id: i64 = env::var("TELEGRAM_CHAT_ID")
+        .expect("fail to read TELEGRAM_CHAT_ID")
+        .parse()
+        .expect("faile to parse");
 
-    let raw_html_string = res.text().unwrap();
+    println!("token: {}, chat_id: {}", token, chat_id);
 
-    let document = Html::parse_document(&raw_html_string);
+    // send_message("Test from library".to_string(), &token, chat_id).expect("fail to send message");
+}
 
-    let page_title = Selector::parse("h1.css-dwc418").unwrap();
-    // let article_name = Selector::parse("a div").unwrap();
-    let href = Selector::parse("a.css-1ey6mep").unwrap();
+fn send_message(
+    msg: String,
+    token: &str,
+    chat_id: i64,
+) -> Result<reqwest::blocking::Response, reqwest::Error> {
+    let mut request_body = Map::new();
+    request_body.insert("text".to_string(), Value::String(msg));
+    request_body.insert("chat_id".to_string(), json!(chat_id));
+    request_body.insert(
+        "parse_mode".to_string(),
+        Value::String("MarkdownV2".to_string()),
+    );
 
-    let section_selector = Selector::parse("section.css-14d7djd").unwrap();
-    let first_div_selector = Selector::parse("div.css-148156o").unwrap();
+    let url = format!(
+        "https://api.telegram.org/bot{token}/sendMessage",
+        token = &token
+    );
+    let client = reqwest::blocking::Client::new();
+    let resp = client.post(url).json(&json!(request_body)).send()?;
 
-    for second_section_elem in document.select(&section_selector) {
-        let first_div_elem = second_section_elem
-            .select(&first_div_selector)
-            .next()
-            .unwrap();
-        println!("{:?}", first_div_elem);
-    }
-
-    let post_selector = Selector::parse("div.css-1tl1y3y").unwrap();
-    let publish_date_selector = Selector::parse("a div h6").unwrap();
-
-    // for node in second_section_elem.select(&post_selector) {
-    //     println!("{:?}", node);
-    //     let date_elem = node.select(&publish_date_selector).next().unwrap();
-    //     let date = date_elem.text().collect::<String>();
-    //     println!("{:?}", date);
-    // }
-    // let page_title = title_elem.text().collect::<String>();
+    Ok(resp)
 }
