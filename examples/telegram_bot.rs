@@ -1,15 +1,54 @@
 use std::env;
 
-use serde_json::{json, Value, Map};
+use dotenv::dotenv;
+use serde_json::{json, Map, Value};
+use teloxide::{prelude::*, utils::command::BotCommands};
 
-fn main() {
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
-    let chat_id: i64 = env::var("TELEGRAM_CHAT_ID")
-        .expect("TELEGRAM_CHAT_ID not set")
-        .parse()
-        .expect("faile to parse");
+#[tokio::main]
+async fn main() {
+    dotenv().expect("can not find env file");
+    pretty_env_logger::init();
+    log::info!("Starting command bot..");
 
-    send_message("Test from library".to_string(), &token, chat_id).expect("fail to send message");
+    let bot = Bot::from_env();
+
+    Command::repl(bot, answer).await;
+}
+
+#[derive(BotCommands, Clone)]
+#[command(
+    rename_rule = "lowercase",
+    description = "These commands are supported:"
+)]
+enum Command {
+    #[command(description = "display this text.")]
+    Help,
+    #[command(description = "handle a username.")]
+    Username(String),
+    #[command(description = "handle a username and an age..", parse_with = "split")]
+    UsernameAndAge { username: String, age: u8 },
+}
+
+async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+    match cmd {
+        Command::Help => {
+            bot.send_message(msg.chat.id, Command::descriptions().to_string())
+                .await?
+        }
+        Command::Username(username) => {
+            bot.send_message(msg.chat.id, format!("Your username is @{username}."))
+                .await?
+        }
+        Command::UsernameAndAge { username, age } => {
+            bot.send_message(
+                msg.chat.id,
+                format!("Your username is @{username} and age is {age}."),
+            )
+            .await?
+        }
+    };
+
+    Ok(())
 }
 
 fn send_message(
